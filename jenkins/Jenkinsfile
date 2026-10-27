@@ -23,19 +23,14 @@ pipeline {
                     reuseNode true
                 }
             }
-            steps {
-                dir('bugtracker-frontend') {
-                   sh 'npm install'
-                   sh 'npm test'
-                }
-            }
+          
 
             steps {
                 dir('bugtracker-frontend') {
                     sh 'npm ci'
                     sh 'npm test'
                 }
+            }
         }
     }
-}
 }
