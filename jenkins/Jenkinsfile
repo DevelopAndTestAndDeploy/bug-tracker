@@ -18,7 +18,7 @@ pipeline {
 
         stage('Unit Tests - Frontend') {
             agent{
-                docker {
+                docker {]
                     image 'node:20-alpine'
                     reuseNode true
                 }
@@ -29,6 +29,12 @@ pipeline {
                 dir('bugtracker-frontend') {
                     sh 'npm ci'
                     sh 'npm test'
+                }
+            }
+
+            post {
+                always {
+                    junit 'bugtracker-frontend/test-results.xml'
                 }
             }
         }
