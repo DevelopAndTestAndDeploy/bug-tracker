@@ -18,6 +18,12 @@ pipeline {
                             exit 1
                         fi
 
+                        export GOCACHE="${WORKSPACE}/.cache/go-build"
+                        if ! mkdir -p "$GOCACHE"; then
+                            echo "Could not create Go build cache at $GOCACHE" >&2
+                            exit 1
+                        fi
+
                         go test -v ./... > test-output.txt 2>&1
                         test_status=$?
                         cat test-output.txt
