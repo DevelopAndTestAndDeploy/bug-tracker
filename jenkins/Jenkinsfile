@@ -18,9 +18,11 @@ pipeline {
                             exit 1
                         fi
 
+                        export GOPATH="${WORKSPACE}/.go"
+                        export GOMODCACHE="${GOPATH}/pkg/mod"
                         export GOCACHE="${WORKSPACE}/.cache/go-build"
-                        if ! mkdir -p "$GOCACHE"; then
-                            echo "Could not create Go build cache at $GOCACHE" >&2
+                        if ! mkdir -p "$GOMODCACHE" "$GOCACHE"; then
+                            echo "Could not create Go caches under $WORKSPACE" >&2
                             exit 1
                         fi
 
