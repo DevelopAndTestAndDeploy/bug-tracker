@@ -11,13 +11,44 @@ pipeline {
             }
             steps {
                 dir('bugtracker-backend') {
-                   sh 'go test -v ./... 2>&1 | go-junit-report > test-results.xml'
+                    sh '''
+                        set +e
+                        if [ ! -f go.mod ]; then
+                            echo "Backend workspace is missing go.mod; check that the Jenkins Docker agent can access the mounted workspace." >&2
+                            exit 1
+                        fi
+
+                        go test -v ./... > test-output.txt 2>&1
+                        test_status=$?
+                        cat test-output.txt
+
+                        go-junit-report < test-output.txt > test-results.xml
+                        report_status=$?
+                        if [ "$report_status" -eq 0 ] && ! grep -q '<testcase ' test-results.xml; then
+                            echo "Backend JUnit report contains no testcases; check that tests ran in the Docker workspace." >&2
+                            report_status=1
+                        fi
+                        rm -f test-output.txt
+
+                        if [ "$report_status" -ne 0 ]; then
+                            echo "Failed to generate backend JUnit report" >&2
+                            exit "$report_status"
+                        fi
+                        exit "$test_status"
+                    '''
                 }
             }
 
             post {
                 always {
-                    junit 'bugtracker-backend/test-results.xml'
+                    script {
+                        def report = 'bugtracker-backend/test-results.xml'
+                        if (fileExists(report) && readFile(report).contains('<testcase ')) {
+                            junit report
+                        } else {
+                            echo 'Backend JUnit report is unavailable or contains no testcases.'
+                        }
+                    }
                 }
             }
         }
