@@ -4,19 +4,24 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"sync"
 	"syscall"
 	"time"
 )
 
 var (
-	testDBPaths = make(map[string]struct{})
-	mu          sync.Mutex
+	testDBPaths    = make(map[string]struct{})
+	testDBSequence uint64
+	mu             sync.Mutex
 )
 
 func GetTestDBPath() string {
-	path := filepath.Join(os.TempDir(), "test_"+time.Now().Format("20060102150405.000")+".db")
 	mu.Lock()
+	testDBSequence++
+	timestamp := time.Now().Format("20060102150405.000000000")
+	filename := "test_" + timestamp + "_" + strconv.FormatUint(testDBSequence, 10) + ".db"
+	path := filepath.Join(os.TempDir(), filename)
 	testDBPaths[path] = struct{}{}
 	mu.Unlock()
 	return path
