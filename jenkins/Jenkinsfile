@@ -30,6 +30,15 @@ pipeline {
                         test_status=$?
                         cat test-output.txt
 
+                        coverage_status=0
+                        if [ -f coverage.out ]; then
+                            go tool cover -html=coverage.out -o coverage.html
+                            coverage_status=$?
+                        else
+                            echo "Coverage report not generated; check that tests ran successfully." >&2
+                            coverage_status=1
+                        fi
+
                         go-junit-report < test-output.txt > test-results.xml
                         report_status=$?
                         if [ "$report_status" -eq 0 ] && ! grep -q '<testcase ' test-results.xml; then
@@ -41,6 +50,10 @@ pipeline {
                         if [ "$report_status" -ne 0 ]; then
                             echo "Failed to generate backend JUnit report" >&2
                             exit "$report_status"
+                        fi
+                        if [ "$coverage_status" -ne 0 ]; then
+                            echo "Failed to generate backend HTML coverage report" >&2
+                            exit "$coverage_status"
                         fi
                         exit "$test_status"
                     '''
@@ -59,10 +72,12 @@ pipeline {
 
                         def coverageProfile = 'bugtracker-backend/coverage.out'
                         if (fileExists(coverageProfile)) {
-                            dir('bugtracker-backend') {
-                                sh 'go tool cover -html=coverage.out -o coverage.html'
+                            def coverageReport = 'bugtracker-backend/coverage.html'
+                            if (fileExists(coverageReport)) {
+                                archiveArtifacts artifacts: coverageReport, fingerprint: true
+                            } else {
+                                echo 'Backend HTML coverage report is unavailable; it could not be published.'
                             }
-                            archiveArtifacts artifacts: 'bugtracker-backend/coverage.html', fingerprint: true
                         } else {
                             echo 'Backend coverage profile is unavailable; HTML coverage report was not generated.'
                         }
