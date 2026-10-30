@@ -26,7 +26,7 @@ pipeline {
                             exit 1
                         fi
 
-                        go test -v ./... > test-output.txt 2>&1
+                        go test -v -coverprofile coverage.out -covermode atomic ./... > test-output.txt 2>&1
                         test_status=$?
                         cat test-output.txt
 
@@ -55,6 +55,16 @@ pipeline {
                             junit report
                         } else {
                             echo 'Backend JUnit report is unavailable or contains no testcases.'
+                        }
+
+                        def coverageProfile = 'bugtracker-backend/coverage.out'
+                        if (fileExists(coverageProfile)) {
+                            dir('bugtracker-backend') {
+                                sh 'go tool cover -html=coverage.out -o coverage.html'
+                            }
+                            archiveArtifacts artifacts: 'bugtracker-backend/coverage.html', fingerprint: true
+                        } else {
+                            echo 'Backend coverage profile is unavailable; HTML coverage report was not generated.'
                         }
                     }
                 }
