@@ -149,7 +149,7 @@ pipeline {
         stage('Launch application') {
             agent{
                 docker{
-                    image 'docker:27.0.5'
+                    image 'docker:27.5.1-cli'
                     reuseNode true
                     args '-v /var/run/docker.sock:/var/run/docker.sock -u 0'
                 }
@@ -166,7 +166,7 @@ pipeline {
                     
                     image 'mcr.microsoft.com/playwright:v1.50.0-jammy'
                     reuseNode true
-                    args '-u 0 network=host'
+                    args '-u 0 --network=host'
                 }
             }
 
