@@ -2,7 +2,10 @@ pipeline {
     agent any
 
     stages {
-        stage('Unit Tests - Backend') {
+        stage('Execute unit tests'){
+            parallel{
+
+                stage('Unit Tests - Backend') {
             agent{
                 docker {
                     image 'snakee/golang-junit:1.21'
@@ -93,32 +96,75 @@ pipeline {
                     reuseNode true
                 }
             }
-          
 
             steps {
                 dir('bugtracker-frontend') {
-                    sh''' 
-                    npm ci
-                    npm test
-                    mkdir -p reports
-                    mv coverage repots/
+                    sh '''
+                        set +e
+                        npm ci
+                        CI=true npm test -- --watch=false --runInBand
+                        test_status=$?
+
+                        mkdir -p reports
+                        if [ -d coverage ]; then
+                            mv coverage reports/
+                        fi
+
+                        exit "$test_status"
                     '''
                 }
             }
 
             post {
                 always {
-                    junit 'bugtracker-frontend/test-results.xml'
-                    publishHTML target: [
-                        allowMissing: true,
-                        alwaysLinkToLastBuild: false,
-                        keepAll: true,
-                        reportDir: 'bugtracker-frontend/reports/coverage',
-                        reportFiles: 'index.html',
-                        reportName: 'Frontend Coverage Report'
-                    ]
+                    script {
+                        def junitResults = 'bugtracker-frontend/test-results.xml'
+                        if (fileExists(junitResults)) {
+                            junit junitResults
+                        } else {
+                            echo 'Frontend JUnit report is unavailable.'
+                        }
+
+                        def coverageDir = 'bugtracker-frontend/reports/coverage'
+                        if (fileExists(coverageDir + '/index.html')) {
+                            publishHTML target: [
+                                allowMissing: true,
+                                alwaysLinkToLastBuild: false,
+                                keepAll: true,
+                                reportDir: coverageDir,
+                                reportFiles: 'index.html',
+                                reportName: 'Frontend Coverage Report'
+                            ]
+                        } else {
+                            echo 'Frontend HTML coverage report is unavailable.'
+                        }
+                    }
                 }
             }
+        }
+
+            }
+        }
+        
+        stage('Launch application') {
+            agent{
+                docker{
+                    image 'docker:27.0.5'
+                    reuseNode true
+                    args '-v /var/run/docker.sock:/var/run/docker.sock -u 0'
+                }
+            }
+
+            steps{
+                sh 'docker compose up --build -d'
+            }
+        }
+        
+    }
+
+    post {
+        always {
+            cleanWs()
         }
     }
 }
