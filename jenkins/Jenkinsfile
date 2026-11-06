@@ -191,6 +191,37 @@ pipeline {
                 }
             }
         }
+
+        stage('E2E Tests') {
+            agent {
+                docker {
+                    image 'mcr.microsoft.com/playwright:v1.50.0-jammy'
+                    reuseNode true
+                    args '-u 0 --network=host'
+                }
+            }
+
+            steps{
+                dir('tests-e2e') {
+                    sh 'npx wait-port http://localhost:3000 -t 30000 '
+
+                    sh 'npm ci'
+                    sh 'npx playwright test'
+                    
+                }
+            }
+
+            post{
+                always{
+                    junit 'tests-e2e/test-results/results.xml'
+                    publishHTML target: [
+                        reportDir: 'tests-e2e/playwright-report',
+                        reportFiles: 'index.html',
+                        reportName: 'E2E Test Report'
+                    ]
+                }
+            }
+        }
     }
 
     post {
