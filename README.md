@@ -114,10 +114,16 @@ winget install k6
 For Linux installation instructions, please refer to the [official K6 installation guide](https://k6.io/docs/getting-started/installation#linux)
 ```
 
-Then run the tests:
+Start the backend from the repository root (in a separate terminal):
+
 ```bash
-cd tests-perf
-k6 run script.js
+docker compose up -d backend
+```
+
+Then, from the repository root, run:
+
+```powershell
+k6 run .\tests-perf\script.js
 ```
 
 ## Project Structure
