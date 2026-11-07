@@ -172,9 +172,9 @@ pipeline {
 
             steps{
                 dir('tests-api') {
+                    sh 'npm ci'
                     sh 'npx wait-port http://localhost:8080/api/health -t 30000 '
 
-                    sh 'npm ci'
                     sh 'npx playwright test'
                     
                 }
@@ -203,9 +203,9 @@ pipeline {
 
             steps{
                 dir('tests-e2e') {
+                    sh 'npm ci'
                     sh 'npx wait-port http://localhost:3000 -t 30000 '
 
-                    sh 'npm ci'
                     sh 'npx playwright test'
                     
                 }
@@ -228,7 +228,7 @@ pipeline {
                 docker{
                     image 'grafana/k6:latest'
                     reuseNode true
-                    args '--network=host -u root --entryppoint=""'
+                    args '--network=host -u root --entrypoint=""'
                 }
             }
 
@@ -241,8 +241,8 @@ pipeline {
             post{
                 always{
                     publishHTML target: [
-                        reportDir: 'tests-perf/html-report',
-                        reportFiles: 'index.html',
+                        reportDir: 'tests-perf',
+                        reportFiles: 'perf-results.html',
                         reportName: 'Performance Test Report'
                     ]
                 }
