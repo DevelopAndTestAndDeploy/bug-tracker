@@ -237,6 +237,16 @@ pipeline {
                     sh 'k6 run script.js'
                }
             }
+
+            post{
+                always{
+                    publishHTML target: [
+                        reportDir: 'tests-perf/html-report',
+                        reportFiles: 'index.html',
+                        reportName: 'Performance Test Report'
+                    ]
+                }
+            }
         }
     }
 
